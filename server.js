@@ -137,8 +137,3 @@ app.get("/api/ranklist", (req, res) => {
     }
   })
 })
-
-
-app.get('/*', function (req, res) {
-  res.sendFile('index.html');
-});
