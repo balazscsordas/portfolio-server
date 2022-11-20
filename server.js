@@ -10,7 +10,12 @@ const saltRounds = 10;
 
 const app = express();
 
-app.use(cors());
+app.use(
+	cors({
+		origin: [process.env.CLIENT_URL],
+		credentials: true,
+	})
+);
 app.use(express.json());
 
 app.listen(process.env.PORT || PORT, function() {
@@ -37,20 +42,18 @@ const User = mongoose.model('User', usersSchema);
 
 // Weather App //
 
-app.post("/api/get-weather-data", (req, res) => {
-  const location = req.body.cityNameInput;
-  const apiKey = process.env.WEATHERAPPKEY;
-  const unit = req.body.radioInput;
-  const url = process.env.WEATHERAPPURL + location + "&appid=" + apiKey + "&units=" + unit;
-
-    axios.get(url)
-    .then (response => {
-        res.json(response.data)
-    })
-    .catch (error => {
-        res.json(error.response.data)
-    });
-  
+app.post("/api/get-weather-data", async (req, res) => {
+  try {
+    const location = req.body.cityNameInput;
+    const apiKey = process.env.WEATHERAPPKEY;
+    const unit = req.body.radioInput;
+    const url = process.env.WEATHERAPPURL + location + "&appid=" + apiKey + "&units=" + unit;
+    const response = await axios.get(url);
+    res.json(response.data);
+  }
+  catch (err) {
+    res.json(err.response.data);
+  }
 });
 
 
