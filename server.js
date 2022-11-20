@@ -11,6 +11,7 @@ const saltRounds = 10;
 const app = express();
 
 app.use(cors());
+app.use(express.json());
 
 app.listen(process.env.PORT || PORT, function() {
   console.log("Server is running on port " +PORT);
@@ -36,10 +37,10 @@ const User = mongoose.model('User', usersSchema);
 
 // Weather App //
 
-app.get("/api/get-weather-data", (req, res) => {
-  const location = req.query.cityNameInput;
+app.post("/api/get-weather-data", (req, res) => {
+  const location = req.body.cityNameInput;
   const apiKey = process.env.WEATHERAPPKEY;
-  const unit = req.query.radioInput;
+  const unit = req.body.radioInput;
   const url = process.env.WEATHERAPPURL + location + "&appid=" + apiKey + "&units=" + unit;
 
     axios.get(url)
@@ -55,11 +56,11 @@ app.get("/api/get-weather-data", (req, res) => {
 
 // Registration
 
-app.get("/api/registration", (req, res) => {
+app.post("/api/registration", (req, res) => {
 
-  const email = req.query.registrationData.email;
-  const password = req.query.registrationData.password;
-  const name = req.query.registrationData.name;
+  const email = req.body.registrationData.email;
+  const password = req.body.registrationData.password;
+  const name = req.body.registrationData.name;
 
   User.findOne({email: email}, (err, foundUser) => {
     if (foundUser) {
@@ -93,9 +94,9 @@ app.get("/api/registration", (req, res) => {
 
 // Login
 
-app.get("/api/login", (req, res) => {
-  const email = req.query.loginData.email;
-  const password = req.query.loginData.password;
+app.post("/api/login", (req, res) => {
+  const email = req.body.loginData.email;
+  const password = req.body.loginData.password;
 
   User.findOne({email: email}, (err, foundUser) => { 
     if(foundUser && bcrypt.compareSync(password, foundUser.password)) {
