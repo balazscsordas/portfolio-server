@@ -45,6 +45,10 @@ const User = mongoose.model('User', usersSchema);
 
 // Weather App //
 
+app.get("/api/server-start-request", (req, res) => {
+  res.json({message: "Server started"})
+});
+
 app.post("/api/get-weather-data", async (req, res) => {
   try {
     const location = req.body.cityNameInput;
