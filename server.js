@@ -34,8 +34,8 @@ const postsSchema = new mongoose.Schema({
 });
 
 const usersSchema = new mongoose.Schema({
-  name: String,
-  email: String,
+  firstName: String,
+  username: String,
   password: String,
   bestScore: Number,
   posts: postsSchema
@@ -43,11 +43,13 @@ const usersSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', usersSchema);
 
-// Weather App //
+// First server request
 
 app.get("/api/server-start-request", (req, res) => {
   res.json({message: "Server started"})
 });
+
+// Weather App //
 
 app.post("/api/get-weather-data", async (req, res) => {
   try {
@@ -68,13 +70,13 @@ app.post("/api/get-weather-data", async (req, res) => {
 
 app.post("/api/registration", (req, res) => {
 
-  const email = req.body.registrationData.email;
+  const firstName = req.body.registrationData.firstName;
+  const username = req.body.registrationData.username;
   const password = req.body.registrationData.password;
-  const name = req.body.registrationData.name;
 
-  User.findOne({email: email}, (err, foundUser) => {
+  User.findOne({username: username}, (err, foundUser) => {
     if (foundUser) {
-      res.json({message: "An account is already registered with your email address Please log in."})
+      res.json({message: "An account is already registered with your username, please log in."})
     } else if (err) {
       console.log(err)
     } else {
@@ -83,8 +85,8 @@ app.post("/api/registration", (req, res) => {
           console.log("Error with password encryption in registration!");
         } else {
           const user = new User({
-            name: name,
-            email: email,
+            firstName: firstName,
+            username: username,
             password: hash,
             bestScore: 0
           })
@@ -105,14 +107,19 @@ app.post("/api/registration", (req, res) => {
 // Login
 
 app.post("/api/login", (req, res) => {
-  const email = req.body.loginData.email;
+  const username = req.body.loginData.username;
   const password = req.body.loginData.password;
 
-  User.findOne({email: email}, (err, foundUser) => { 
+  User.findOne({username: username}, (err, foundUser) => { 
     if(foundUser && bcrypt.compareSync(password, foundUser.password)) {
-      res.json({id: foundUser._id, name: foundUser.name, bestScore: foundUser.bestScore, message: "Success"});
+      res.json({
+        id: foundUser._id, 
+        firstName: foundUser.firstName, 
+        username: foundUser.username, 
+        bestScore: foundUser.bestScore, 
+        message: "Success"});
     } else if(!foundUser) {
-      res.json({message: "This e-mail isn't registered"})
+      res.json({message: "This username isn't registered"})
     } else if (foundUser && bcrypt.compareSync(password, foundUser.password) !== true) {
       res.json({message: "Password isn't valid"});
     } else if(err) {
@@ -124,10 +131,10 @@ app.post("/api/login", (req, res) => {
 // Patch Game new record
 
 app.patch("/api/setNewRecord", (req, res) => {
-  const id = req.query.id;
+  const userId = req.query.id;
   const record = req.query.record;
 
-  User.updateOne({ _id: id }, { bestScore: record }, err => {
+  User.updateOne({ _id: userId }, { bestScore: record }, err => {
     if (!err) {
       console.log("Sikeres Módosítás");
     } else {
@@ -140,7 +147,7 @@ app.patch("/api/setNewRecord", (req, res) => {
 
 app.get("/api/ranklist", (req, res) => {
 
-  User.find({ bestScore: {$gte: 1} }, 'name bestScore', (err, foundUsers) => {
+  User.find({ bestScore: {$gte: 1} }, 'firstName bestScore', (err, foundUsers) => {
     if (err) {
       console.log(err);
     } else if (foundUsers){
