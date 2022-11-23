@@ -38,7 +38,7 @@ const usersSchema = new mongoose.Schema({
   username: String,
   password: String,
   bestScore: Number,
-  posts: postsSchema
+  posts: [postsSchema]
 });
 
 const User = mongoose.model('User', usersSchema);
@@ -161,14 +161,56 @@ app.get("/api/ranklist", (req, res) => {
 
 app.post("/api/toDoApplication/addPost", (req, res) => {
   const userId = req.body.user.id;
-  const postTitle = req.body.postData.title;
-  const postContent = req.body.postData.content;
+  const post = req.body.postData;
 
   User.findOne({ _id: userId }, (err, foundUser) => {
     if (err) {
       console.log(err);
     } else {
-      console.log(foundUser.name);
+      foundUser.posts.push(post);
+      foundUser.markModified;
+      foundUser.save((error, saveResult) => {
+        !error 
+          ? console.log("Successfully saved the document") 
+          : console.log("Something went wrong while saving");
+      })
     }
   })
 })
+
+
+// To-Do application fetch user's posts
+
+app.post("/api/toDoApplication/fetchPosts", (req, res) => {
+  const userId = req.body.userId;
+
+  User.findOne({ __id: userId }, (err, foundUser) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.json({foundPosts: foundUser.posts});
+    }
+  });
+});
+
+
+// To-Do application delete user's post
+
+app.post("/api/toDoApplication/deletePost", (req, res) => {
+  const postId = req.body.postId;
+  const userId = req.body.userId;
+
+  User.findOne({ _id: userId }, (err, foundUser) => {
+    if (err) {
+      console.log(err);
+    } else {
+      foundUser.posts.id(postId).remove((removeError, removeResult) => {
+        removeError && console.log(removeError);
+      });
+      foundUser.markModified;
+      foundUser.save((error, saveResult) => {
+        error && console.log(error);
+      })
+    }
+  })
+});
