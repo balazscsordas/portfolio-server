@@ -5,12 +5,14 @@ const cors = require('cors');
 require ('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const corsOptions = require('./config/corsOptions')
 
 const saltRounds = 10;
 
 const app = express();
 
-app.use(cors());
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 app.listen(process.env.PORT || PORT, function() {
@@ -26,11 +28,17 @@ async function main() {
   await mongoose.connect(dbURL);
 }
 
+const postsSchema = new mongoose.Schema({
+  title: String,
+  content: String
+});
+
 const usersSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
-  bestScore: Number
+  bestScore: Number,
+  posts: postsSchema
 });
 
 const User = mongoose.model('User', usersSchema);
@@ -98,7 +106,7 @@ app.post("/api/login", (req, res) => {
 
   User.findOne({email: email}, (err, foundUser) => { 
     if(foundUser && bcrypt.compareSync(password, foundUser.password)) {
-      res.json({name: foundUser.name, email: foundUser.email, bestScore: foundUser.bestScore, message: "Success"});
+      res.json({id: foundUser._id, name: foundUser.name, bestScore: foundUser.bestScore, message: "Success"});
     } else if(!foundUser) {
       res.json({message: "This e-mail isn't registered"})
     } else if (foundUser && bcrypt.compareSync(password, foundUser.password) !== true) {
@@ -112,10 +120,10 @@ app.post("/api/login", (req, res) => {
 // Patch Game new record
 
 app.patch("/api/setNewRecord", (req, res) => {
-  const email = req.query.email;
+  const id = req.query.id;
   const record = req.query.record;
 
-  User.updateOne({ email: email }, { bestScore: record }, err => {
+  User.updateOne({ _id: id }, { bestScore: record }, err => {
     if (!err) {
       console.log("Sikeres Módosítás");
     } else {
@@ -133,6 +141,23 @@ app.get("/api/ranklist", (req, res) => {
       console.log(err);
     } else if (foundUsers){
       res.json({foundUsers: foundUsers.sort((a, b) =>  b.bestScore - a.bestScore).slice(0, 10)});
+    }
+  })
+})
+
+
+// To-Do application add post
+
+app.post("/api/toDoApplication/addPost", (req, res) => {
+  const userId = req.body.user.id;
+  const postTitle = req.body.postData.title;
+  const postContent = req.body.postData.content;
+
+  User.findOne({ _id: userId }, (err, foundUser) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(foundUser.name);
     }
   })
 })
