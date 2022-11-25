@@ -68,149 +68,136 @@ app.post("/api/get-weather-data", async (req, res) => {
 
 // Registration
 
-app.post("/api/registration", (req, res) => {
-
-  const firstName = req.body.registrationData.firstName;
-  const username = req.body.registrationData.username;
-  const password = req.body.registrationData.password;
-
-  User.findOne({username: username}, (err, foundUser) => {
+app.post("/api/registration", async (req, res) => {
+  try {
+    const firstName = req.body.registrationData.firstName;
+    const username = req.body.registrationData.username;
+    const password = req.body.registrationData.password;
+    const foundUser = await User.findOne({username: username});
     if (foundUser) {
-      res.json({message: "An account is already registered with your username, please log in."})
-    } else if (err) {
-      console.log(err)
+      res.json({message: "An account is already registered with your username, please log in."});
     } else {
-      bcrypt.hash(password, saltRounds, (err, hash) => {
-        if(err) {
-          console.log("Error with password encryption in registration!");
-        } else {
+      const hash = await bcrypt.hash(password, saltRounds);
+        if(hash) {
           const user = new User({
             firstName: firstName,
             username: username,
             password: hash,
-            bestScore: 0
-          })
+            bestScore: 0,
+            posts: []
+          });
           user.save(err => {
             if(err) {
               console.log(err);
             } else {
-              res.json({message: "Registration was successful"})
+              res.json({message: "Registration was successful"});
             }
           })
         }
-      })
-    
-    }
-  });
+      }
+  }
+  catch(err) {
+    console.log(err);
+  }
 })
 
 // Login
 
-app.post("/api/login", (req, res) => {
-  const username = req.body.loginData.username;
-  const password = req.body.loginData.password;
-
-  User.findOne({username: username}, (err, foundUser) => { 
+app.post("/api/login", async (req, res) => {
+  try {
+    const username = req.body.loginData.username;
+    const password = req.body.loginData.password;
+    const foundUser = await User.findOne({username: username});
     if(foundUser && bcrypt.compareSync(password, foundUser.password)) {
       res.json({
-        id: foundUser._id, 
+        id: foundUser._id,
         firstName: foundUser.firstName, 
         username: foundUser.username, 
         bestScore: foundUser.bestScore, 
         message: "Success"});
     } else if(!foundUser) {
-      res.json({message: "This username isn't registered"})
+      res.json({message: "This username isn't registered"});
     } else if (foundUser && bcrypt.compareSync(password, foundUser.password) !== true) {
       res.json({message: "Password isn't valid"});
-    } else if(err) {
-      console.log(err);
     }
-  })
+  }
+  catch(err) {
+    console.log(err);
+  }
 })
 
 // Patch Game new record
 
-app.patch("/api/setNewRecord", (req, res) => {
-  const userId = req.query.id;
-  const record = req.query.record;
-
-  User.updateOne({ _id: userId }, { bestScore: record }, err => {
-    if (!err) {
-      console.log("Sikeres Módosítás");
-    } else {
-      console.log(err);
-    }
-  })
+app.patch("/api/setNewRecord", async (req, res) => {
+  try {
+    const userId = req.body.id;
+    const record = req.body.record;
+    const response = await User.updateOne({ _id: userId }, { bestScore: record });
+    res.json({message: "record modified"});
+  } 
+  catch(err) {
+    console.log(err);
+  }
 })
 
 // Filter ranklist - Gets the 10 best players, sorts them in order and sends back to frontend
 
-app.get("/api/ranklist", (req, res) => {
-
-  User.find({ bestScore: {$gte: 1} }, 'firstName bestScore', (err, foundUsers) => {
-    if (err) {
-      console.log(err);
-    } else if (foundUsers){
-      res.json({foundUsers: foundUsers.sort((a, b) =>  b.bestScore - a.bestScore).slice(0, 10)});
-    }
-  })
+app.get("/api/ranklist", async (req, res) => {
+  try {
+    const foundUsers = await User.find({ bestScore: {$gte: 1} }, 'firstName bestScore');
+    res.json({foundUsers: foundUsers.sort((a, b) =>  b.bestScore - a.bestScore).slice(0, 10)});
+  }
+  catch (err) {
+    console.log(err);
+  }
 })
 
 
 // To-Do application add post
 
-app.post("/api/toDoApplication/addPost", (req, res) => {
-  const userId = req.body.user.id;
-  const post = req.body.postData;
-
-  User.findOne({ _id: userId }, (err, foundUser) => {
-    if (err) {
-      console.log(err);
-    } else {
-      foundUser.posts.push(post);
-      foundUser.markModified;
-      foundUser.save((error, saveResult) => {
-        !error 
-          ? console.log("Successfully saved the document") 
-          : console.log("Something went wrong while saving");
-      })
-    }
-  })
+app.post("/api/toDoApplication/addPost", async (req, res) => {
+  try {
+    const userId = req.body.user.id;
+    const post = req.body.postData;
+    const foundUser = await User.findOne({ _id: userId });
+    foundUser.posts.push(post);
+    foundUser.markModified;
+    foundUser.save();
+    res.json({message: "post added"});
+  }
+  catch(err) {
+    console.log(err);
+  }
 })
 
 
 // To-Do application fetch user's posts
 
-app.post("/api/toDoApplication/fetchPosts", (req, res) => {
-  const userId = req.body.userId;
-
-  User.findOne({ __id: userId }, (err, foundUser) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.json({foundPosts: foundUser.posts});
-    }
-  });
+app.post("/api/toDoApplication/fetchPosts", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const foundUser = await User.findOne({ _id: userId });
+    res.json({foundPosts: foundUser.posts});
+  }
+  catch(err) {
+    console.log(err);
+  }
 });
 
 
 // To-Do application delete user's post
 
-app.post("/api/toDoApplication/deletePost", (req, res) => {
-  const postId = req.body.postId;
-  const userId = req.body.userId;
-
-  User.findOne({ _id: userId }, (err, foundUser) => {
-    if (err) {
-      console.log(err);
-    } else {
-      foundUser.posts.id(postId).remove((removeError, removeResult) => {
-        removeError && console.log(removeError);
-      });
-      foundUser.markModified;
-      foundUser.save((error, saveResult) => {
-        error && console.log(error);
-      })
-    }
-  })
+app.post("/api/toDoApplication/deletePost", async (req, res) => {
+  try {
+    const index = req.body.index;
+    const userId = req.body.userId;
+    const foundUser = await User.findOne({ _id: userId });
+    foundUser.posts.splice(index, 1);
+    foundUser.markModified;
+    foundUser.save();
+    res.json({message: "post deleted"});
+  }
+  catch(err) {
+    console.log(err);
+  }
 });
