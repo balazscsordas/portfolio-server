@@ -41,7 +41,17 @@ const usersSchema = new mongoose.Schema({
   posts: [postsSchema]
 });
 
+const clientsSchema = new mongoose.Schema({
+  trainerId: String,
+  name: String,
+  age: Number,
+  basicInformation: String,
+  allergies: String,
+  injuries: String
+})
+
 const User = mongoose.model('User', usersSchema);
+const Client = mongoose.model('Client', clientsSchema);
 
 // First server request
 
@@ -201,3 +211,55 @@ app.post("/api/toDoApplication/deletePost", async (req, res) => {
     console.log(err);
   }
 });
+
+
+// Trainer App - Add new client
+
+app.post("/api/trainer-app/add-new-client", async (req, res) => {
+  try {
+    const newClientData = req.body.clientData;
+    const trainerId = req.body.trainerId;
+    const client = new Client({
+      trainerId: trainerId,
+      name: newClientData.name,
+      age: newClientData.age,
+      basicInformation: newClientData.basicInformation,
+      allergies: newClientData.allergies,
+      injuries: newClientData.injuries
+    });
+    await client.save();
+    res.json({message: "Client has been added"});
+  }
+  catch(err) {
+    console.log(err);
+  }
+});
+
+
+// Trainer App - Fetch clients
+
+app.post("/api/trainer-app/fetch-clients", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const foundClients = await Client.find({ trainerId: userId });
+    res.json({foundClients: foundClients});
+  }
+  catch(err) {
+    console.log(err);
+  }
+})
+
+
+// Trainer App - Save modified client data
+
+app.post("/api/trainer-app/save-modified-client-data", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const data = req.body.data;
+    await Client.updateOne({ trainerId: userId }, { basicInformation: data.basicInformation, allergies: data.allergies, injuries: data.injuries });
+    res.json({message: "client data has been modified"});
+  }
+  catch(err) {
+    console.log(err);
+  }
+})
