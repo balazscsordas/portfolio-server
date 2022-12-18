@@ -5,13 +5,13 @@ const cors = require('cors');
 require ('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const corsOptions = require('./config/corsOptions')
+const corsOptionsDelegate = require('./config/corsOptionsDelegate')
 
 const saltRounds = 10;
 
 const app = express();
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 app.use(express.json());
 
