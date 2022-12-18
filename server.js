@@ -217,6 +217,7 @@ app.post("/api/toDoApplication/deletePost", async (req, res) => {
 
 app.post("/api/trainer-app/add-new-client", async (req, res) => {
   try {
+    let documentId;
     const newClientData = req.body.clientData;
     const trainerId = req.body.trainerId;
     const client = new Client({
@@ -227,8 +228,8 @@ app.post("/api/trainer-app/add-new-client", async (req, res) => {
       allergies: newClientData.allergies,
       injuries: newClientData.injuries
     });
-    await client.save();
-    res.json({message: "Client has been added"});
+    client.save();
+    res.json({message: "Client has been added", clientDatabaseId: client._id});
   }
   catch(err) {
     console.log(err);
@@ -240,8 +241,8 @@ app.post("/api/trainer-app/add-new-client", async (req, res) => {
 
 app.post("/api/trainer-app/fetch-clients", async (req, res) => {
   try {
-    const userId = req.body.userId;
-    const foundClients = await Client.find({ trainerId: userId });
+    const trainerId = req.body.trainerId;
+    const foundClients = await Client.find({ trainerId: trainerId });
     res.json({foundClients: foundClients});
   }
   catch(err) {
@@ -254,10 +255,24 @@ app.post("/api/trainer-app/fetch-clients", async (req, res) => {
 
 app.post("/api/trainer-app/save-modified-client-data", async (req, res) => {
   try {
-    const userId = req.body.userId;
-    const data = req.body.data;
-    await Client.updateOne({ trainerId: userId }, { basicInformation: data.basicInformation, allergies: data.allergies, injuries: data.injuries });
-    res.json({message: "client data has been modified"});
+    const editedClientData = req.body.editedClientData;
+    const clientDatabaseId = req.body.clientDatabaseId;
+    await Client.updateOne({ _id: clientDatabaseId }, { basicInformation: editedClientData.basicInformation, allergies: editedClientData.allergies, injuries: editedClientData.injuries });
+    res.json({message: "Client data has been modified"});
+  }
+  catch(err) {
+    console.log(err);
+  }
+})
+
+
+// Trainer App - Delete client data
+
+app.post("/api/trainer-app/delete-client", async (req, res) => {
+  try {
+    const clientDatabaseId = req.body.clientDatabaseId;
+    await Client.findOneAndDelete({ _id: clientDatabaseId });
+    res.json({message: "Client has been deleted from database"});
   }
   catch(err) {
     console.log(err);
