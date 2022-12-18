@@ -229,7 +229,7 @@ app.post("/api/trainer-app/add-new-client", async (req, res) => {
       injuries: newClientData.injuries
     });
     client.save();
-    res.json({message: "Client has been added", clientDatabaseId: client._id});
+    res.json({message: "Client has been added", _id: client._id});
   }
   catch(err) {
     console.log(err);
@@ -256,8 +256,8 @@ app.post("/api/trainer-app/fetch-clients", async (req, res) => {
 app.post("/api/trainer-app/save-modified-client-data", async (req, res) => {
   try {
     const editedClientData = req.body.editedClientData;
-    const clientDatabaseId = req.body.clientDatabaseId;
-    await Client.updateOne({ _id: clientDatabaseId }, { basicInformation: editedClientData.basicInformation, allergies: editedClientData.allergies, injuries: editedClientData.injuries });
+    const _id = req.body._id;
+    await Client.updateOne({ _id: _id }, { basicInformation: editedClientData.basicInformation, allergies: editedClientData.allergies, injuries: editedClientData.injuries });
     res.json({message: "Client data has been modified"});
   }
   catch(err) {
@@ -270,8 +270,8 @@ app.post("/api/trainer-app/save-modified-client-data", async (req, res) => {
 
 app.post("/api/trainer-app/delete-client", async (req, res) => {
   try {
-    const clientDatabaseId = req.body.clientDatabaseId;
-    await Client.findOneAndDelete({ _id: clientDatabaseId });
+    const _id = req.body._id;
+    await Client.findOneAndDelete({ _id: _id });
     res.json({message: "Client has been deleted from database"});
   }
   catch(err) {
